@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>声控跑酷 - 声音冒险</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* CSS部分将在下面提供 */
+        body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    color: white;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.game-container {
+    width: 800px;
+    height: 550px;
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 15px;
+    box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 20px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-bottom: 2px solid #00ffff;
+}
+
+.game-header h1 {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 1.5rem;
+    margin: 0;
+    color: #00ffff;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
+}
+
+.score-display {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 1rem;
+    color: #ffcc00;
+}
+
+.game-area {
+    width: 100%;
+    height: 350px;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(to bottom, #1e3c72, #2a5298);
+}
+
+.ground {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 30px;
+    background: linear-gradient(to right, #4b5320, #6b8e23);
+    box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.5);
+}
+
+.character {
+    width: 50px;
+    height: 80px;
+    background-color: #ff3366;
+    position: absolute;
+    bottom: 30px;
+    left: 100px;
+    border-radius: 10px 10px 0 0;
+    transition: transform 0.1s;
+    z-index: 10;
+    box-shadow: 0 0 15px rgba(255, 51, 102, 0.7);
+}
+
+/* 角色动画状态 */
+.character.jump {
+    animation: jump 0.8s ease-out;
+}
+
+.character.duck {
+    height: 40px;
+    transform: translateY(40px);
+}
+
+@keyframes jump {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(var(--jump-height, -150px)); } /* Use custom property for dynamic jump height */
+    100% { transform: translateY(0); }
+}
+
+.obstacle {
+    position: absolute;
+    width: 30px;
+    background-color: #ff9933;
+    bottom: 30px;
+    right: -30px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(255, 153, 51, 0.7);
+}
+
+.obstacle.tall {
+    height: 100px;
+}
+
+.obstacle.short {
+    height: 50px;
+}
+
+.obstacle.tall {
+    height: 100px;
+}
+
+.obstacle.short {
+    height: 50px;
+}
+
+.controls {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 20px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-top: 2px solid #00ffff;
+}
+
+.mic-control {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.mic-button {
+    background: linear-gradient(to bottom, #ff3366, #ff0033);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 0.8rem;
+    transition: all 0.3s;
+    box-shadow: 0 0 10px rgba(255, 51, 102, 0.5);
+}
+
+.mic-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(255, 51, 102, 0.8);
+}
+
+.volume-meter {
+    width: 100px;
+    height: 20px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.volume-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(to right, #00ccff, #00ffcc);
+    transition: width 0.1s;
+}
+
+.pitch-display {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 0.8rem;
+    color: #ffcc00;
+}
+
+.instructions {
+    text-align: right;
+    font-size: 0.9rem;
+}
+
+.instructions h3 {
+    margin: 0 0 5px 0;
+    color: #00ffff;
+}
+
+.start-screen, .game-over-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.game-over-screen {
+    display: none;
+}
+
+.start-button, .restart-button {
+    background: linear-gradient(to bottom, #00ccff, #0066ff);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 1rem;
+    margin-top: 20px;
+    transition: all 0.3s;
+    box-shadow: 0 0 15px rgba(0, 204, 255, 0.5);
+}
+
+.start-button:hover, .restart-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 25px rgba(0, 204, 255, 0.8);
+}
+
+.start-screen h2, .game-over-screen h2 {
+    font-family: 'Press Start 2P', cursive;
+    color: #00ffff;
+    font-size: 2rem;
+    margin-bottom: 20px;
+    text-shadow: 0 0 15px rgba(0, 255, 255, 0.7);
+}
+
+.start-screen p, .game-over-screen p {
+    font-size: 1.2rem;
+    margin: 5px 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 850px) {
+    .game-container {
+        width: 95%;
+        height: auto;
+        aspect-ratio: 16/10;
+    }
+    
+    .controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .instructions {
+        text-align: center;
+    }
+}
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <h1>声控跑酷</h1>
+            <div class="score-display">
+                <span>分数: </span>
+                <span id="score">0</span>
+            </div>
+        </div>
+        
+        <div class="game-area">
+            <div id="character" class="character"></div>
+            <div id="obstacles" class="obstacles"></div>
+            <div class="ground"></div>
+        </div>
+        
+        <div class="controls">
+            <div class="mic-control">
+                <button id="mic-btn" class="mic-button">🎤 开启麦克风</button>
+                <div class="volume-meter">
+                    <div id="volume-bar" class="volume-bar"></div>
+                </div>
+                <div class="pitch-display">
+                    <span>音高: </span>
+                    <span id="pitch-value">--</span>
+                </div>
+            </div>
+            
+            <div class="instructions">
+                <h3>如何玩:</h3>
+                <p>🎤 点击按钮启用麦克风</p>
+                <p>🗣️ 大声说话/喊叫 - 跳跃</p>
+                <p>👂 低声细语 - 下蹲</p>
+                <p>🎵 不同音高有不同效果!</p>
+            </div>
+        </div>
+        
+        <div id="start-screen" class="start-screen">
+            <h2>声控跑酷冒险</h2>
+            <p>用你的声音控制角色躲避障碍!</p>
+            <button id="start-btn" class="start-button">开始游戏</button>
+        </div>
+        
+        <div id="game-over" class="game-over-screen">
+            <h2>游戏结束!</h2>
+            <p>你的分数: <span id="final-score">0</span></p>
+            <button id="restart-btn" class="restart-button">再玩一次</button>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript部分将在下面提供
+        const character = document.getElementById('character');
+        const obstaclesContainer = document.getElementById('obstacles');
+        const scoreDisplay = document.getElementById('score');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over');
+        const startButton = document.getElementById('start-btn');
+        const restartButton = document.getElementById('restart-btn');
+        const micButton = document.getElementById('mic-btn');
+        const volumeBar = document.getElementById('volume-bar');
+        const pitchValueDisplay = document.getElementById('pitch-value');
+
+        let score = 0;
+        let isJumping = false;
+        let isDucking = false;
+        let gameOver = false;
+        let gameInterval;
+        let obstacleGenerationInterval;
+        let audioContext;
+        let analyser;
+        let microphone;
+        let javascriptNode;
+
+        const characterBottom = 30; // Initial bottom position
+        let jumpHeight = 150; // Max jump height, now a variable
+        const jumpDuration = 800; // ms
+        const duckHeight = 40; // Character height when ducking
+
+        const obstacleMoveSpeed = 2; // Reduced speed for obstacles
+        const obstacleGenerationRate = 3000; // Increased interval for obstacle generation
+        const volumeThresholdJump = 20; // Lowered threshold for jump sensitivity
+        const volumeThresholdDuck = 15; // Lowered threshold for duck sensitivity
+        const pitchThresholdHigh = 250; // Adjusted pitch threshold for high jump
+        const pitchThresholdLow = 100; // Adjusted pitch threshold for low duck
+        const minPitchJumpHeight = 100; // Minimum jump height for pitch control
+        const maxPitchJumpHeight = 200; // Maximum jump height for pitch control
+
+        // Game Initialization
+        function initGame() {
+            score = 0;
+            scoreDisplay.textContent = score;
+            gameOver = false;
+            obstaclesContainer.innerHTML = ''; // Clear existing obstacles
+            character.style.bottom = characterBottom + 'px';
+            character.classList.remove('jump', 'duck');
+            gameOverScreen.style.display = 'none';
+            startScreen.style.display = 'flex';
+            micButton.textContent = '🎤 开启麦克风';
+            volumeBar.style.width = '0%';
+            pitchValueDisplay.textContent = '--';
+            if (gameInterval) clearInterval(gameInterval);
+            if (obstacleGenerationInterval) clearInterval(obstacleGenerationInterval);
+            if (microphone) {
+                microphone.disconnect();
+                javascriptNode.disconnect();
+                analyser.disconnect();
+                audioContext.close();
+                microphone = null;
+            }
+        }
+
+        // Start Game
+        function startGame() {
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            score = 0;
+            scoreDisplay.textContent = score;
+            gameOver = false;
+            obstaclesContainer.innerHTML = '';
+            character.style.bottom = characterBottom + 'px';
+            character.classList.remove('jump', 'duck');
+
+            gameInterval = setInterval(gameLoop, 20); // Game loop every 20ms
+            obstacleGenerationInterval = setInterval(generateObstacle, obstacleGenerationRate); // Generate obstacle at adjusted rate
+        }
+
+        // Game Loop
+        function gameLoop() {
+            if (gameOver) return;
+
+            // Move obstacles
+            const obstacles = document.querySelectorAll('.obstacle');
+            obstacles.forEach(obstacle => {
+                let currentRight = parseFloat(getComputedStyle(obstacle).right);
+                obstacle.style.right = (currentRight + obstacleMoveSpeed) + 'px'; // Move at adjusted speed
+
+                // Remove obstacle if off screen
+                if (currentRight > 800) {
+                    obstacle.remove();
+                    score += 1;
+                    scoreDisplay.textContent = score;
+                }
+
+                // Collision detection
+                const characterRect = character.getBoundingClientRect();
+                const obstacleRect = obstacle.getBoundingClientRect();
+
+                if (
+                    characterRect.left < obstacleRect.right &&
+                    characterRect.right > obstacleRect.left &&
+                    characterRect.bottom > obstacleRect.top &&
+                    characterRect.top < obstacleRect.bottom
+                ) {
+                    endGame();
+                }
+            });
+        }
+
+        // Generate Obstacle
+        function generateObstacle() {
+            const obstacle = document.createElement('div');
+            obstacle.classList.add('obstacle');
+                        obstacle.style.height = (Math.random() > 0.5 ? 100 : 50) + 'px'; // Random height
+            if (obstacle.style.height === '100px') {
+                obstacle.classList.add('tall');
+            } else {
+                obstacle.classList.add('short');
+            }
+            obstaclesContainer.appendChild(obstacle);
+        }
+
+        // End Game
+        function endGame() {
+            gameOver = true;
+            clearInterval(gameInterval);
+            clearInterval(obstacleGenerationInterval);
+            finalScoreDisplay.textContent = score;
+            gameOverScreen.style.display = 'flex';
+            if (microphone) {
+                microphone.disconnect();
+                javascriptNode.disconnect();
+                analyser.disconnect();
+                audioContext.close();
+                microphone = null;
+            }
+            micButton.textContent = '🎤 开启麦克风';
+            volumeBar.style.width = '0%';
+            pitchValueDisplay.textContent = '--';
+        }
+
+        // Character Actions
+        function jump(height = jumpHeight) {
+            if (isJumping || isDucking) return;
+            isJumping = true;
+            character.style.setProperty('--jump-height', `-${height}px`); // Set custom property for jump height
+            character.classList.add('jump');
+            setTimeout(() => {
+                character.classList.remove('jump');
+                isJumping = false;
+                character.style.removeProperty('--jump-height'); // Clean up custom property
+            }, jumpDuration);
+        }
+
+        function duck() {
+            if (isJumping || isDucking) return;
+            isDucking = true;
+            character.classList.add('duck');
+            setTimeout(() => {
+                character.classList.remove('duck');
+                isDucking = false;
+            }, 500); // Duck duration
+        }
+
+        // Audio Processing
+        async function toggleMicrophone() {
+            if (microphone) {
+                // Stop microphone
+                microphone.disconnect();
+                javascriptNode.disconnect();
+                analyser.disconnect();
+                audioContext.close();
+                microphone = null;
+                micButton.textContent = '🎤 开启麦克风';
+                volumeBar.style.width = '0%';
+                pitchValueDisplay.textContent = '--';
+                return;
+            }
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                microphone = audioContext.createMediaStreamSource(stream);
+                analyser = audioContext.createAnalyser();
+                javascriptNode = audioContext.createScriptProcessor(2048, 1, 1); // bufferSize, inputChannels, outputChannels
+
+                analyser.smoothingTimeConstant = 0.8;
+                analyser.fftSize = 1024;
+
+                microphone.connect(analyser);
+                analyser.connect(javascriptNode);
+                javascriptNode.connect(audioContext.destination);
+
+                javascriptNode.onaudioprocess = () => {
+                    const array = new Uint8Array(analyser.frequencyBinCount);
+                    analyser.getByteFrequencyData(array);
+                    let sum = 0;
+                    for (let i = 0; i < array.length; i++) {
+                        sum += array[i];
+                    }
+                    const average = sum / array.length;
+
+                    // Update volume meter
+                    volumeBar.style.width = (average / 255) * 100 + '%';
+
+                    // Simple pitch detection (more complex algorithms needed for accuracy)
+                    // For demonstration, let's just use a simple frequency peak detection
+                    let maxIndex = 0;
+                    let maxVal = 0;
+                    for (let i = 0; i < array.length; i++) {
+                        if (array[i] > maxVal) {
+                            maxVal = array[i];
+                            maxIndex = i;
+                        }
+                    }
+                    const sampleRate = audioContext.sampleRate;
+                    const frequency = maxIndex * sampleRate / analyser.fftSize;
+
+                    if (average > volumeThresholdDuck) { // Only detect pitch if there's significant volume
+                        pitchValueDisplay.textContent = frequency.toFixed(2) + ' Hz';
+
+                        // Adjust jump height based on pitch
+                        if (frequency > pitchThresholdHigh) {
+                            const dynamicJumpHeight = Math.min(maxPitchJumpHeight, minPitchJumpHeight + (frequency - pitchThresholdHigh) * 0.5); // Scale jump height
+                            jump(dynamicJumpHeight);
+                        } else if (frequency < pitchThresholdLow && frequency > 50) { // Low pitch for duck
+                            duck();
+                        }
+                    } else {
+                        pitchValueDisplay.textContent = '--';
+                    }
+
+                    // Voice control logic (using volume for general sensitivity)
+                    if (average > volumeThresholdJump) { // High volume for jump
+                        // If not already jumping from pitch, trigger a default jump
+                        if (!isJumping && frequency <= pitchThresholdHigh) {
+                            jump();
+                        }
+                    } else if (average > volumeThresholdDuck && average < volumeThresholdJump) { // Low volume for duck
+                        // If not already ducking from pitch, trigger a default duck
+                        if (!isDucking && frequency >= pitchThresholdLow) {
+                            duck();
+                        }
+                    }
+                };
+                micButton.textContent = '🎤 关闭麦克风';
+            } catch (err) {
+                console.error('Error accessing microphone:', err);
+                alert('无法访问麦克风。请确保已授予权限。');
+                micButton.textContent = '🎤 开启麦克风';
+            }
+        }
+
+        // Event Listeners
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', startGame);
+        micButton.addEventListener('click', toggleMicrophone);
+
+        // Initialize game on load
+        initGame();
+    </script>
+</body>
+</html>
